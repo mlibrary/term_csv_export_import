@@ -22,9 +22,9 @@ class ExportForm extends FormBase {
   /**
    * Set a var for export values.
    *
-   * @var get_export
+   * @var getExport
    */
-  protected $get_export = '';
+  protected $getExport = '';
 
   /**
    * {@inheritdoc}
@@ -60,7 +60,7 @@ class ExportForm extends FormBase {
           '#type' => 'textarea',
           '#title' => $this->t('CSV Data'),
           '#description' => $this->t('The formatted term data'),
-          '#value' => $this->get_export,
+          '#value' => $this->getExport,
         ];
         break;
     }
@@ -76,7 +76,7 @@ class ExportForm extends FormBase {
     $export = new ExportController(
       $form_state->getValue('vocabulary')
     );
-    $this->get_export = $export->execute($form['include_ids']['#value']);
+    $this->getExport = $export->execute($form['include_ids']['#value']);
     $form_state->setRebuild();
   }
 

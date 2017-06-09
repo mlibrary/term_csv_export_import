@@ -66,10 +66,22 @@ class ImportController {
         // TODO Inject.
         $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
         $db->insert('taxonomy_term_data')
-          ->fields(['tid' => $row['tid'], 'vid' => $this->vocabulary, 'uuid' => $row['uuid'], 'langcode' => $langcode])
+          ->fields([
+            'tid' => $row['tid'],
+            'vid' => $this->vocabulary,
+            'uuid' => $row['uuid'],
+            'langcode' => $langcode,
+          ])
           ->execute();
         $db->insert('taxonomy_term_field_data')
-          ->fields(['tid' => $row['tid'], 'vid' => $this->vocabulary, 'name' => $row['name'], 'langcode' => $langcode, 'default_langcode' => 1, 'weight' => $row['weight']])
+          ->fields([
+            'tid' => $row['tid'],
+            'vid' => $this->vocabulary,
+            'name' => $row['name'],
+            'langcode' => $langcode,
+            'default_langcode' => 1,
+            'weight' => $row['weight'],
+          ])
           ->execute();
         $new_term = Term::load($row['tid']);
         if (!empty($row['parent_tid'])) {
