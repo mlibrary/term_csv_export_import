@@ -39,29 +39,29 @@ class ExportForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     switch ($this->step) {
       case 1:
-        $form['vocabulary'] = array(
+        $form['vocabulary'] = [
           '#type' => 'select',
           '#title' => $this->t('Taxonomy'),
           '#options' => taxonomy_vocabulary_get_names(),
-        );
+        ];
         $form['include_ids'] = [
           '#type' => 'checkbox',
           '#title' => $this->t('Include Term Ids in export.'),
         ];
-        $form['submit'] = array(
+        $form['submit'] = [
           '#type' => 'submit',
           '#value' => $this->t('Export'),
 
-        );
+        ];
         break;
 
       case 2:
-        $form['input'] = array(
+        $form['input'] = [
           '#type' => 'textarea',
           '#title' => $this->t('CSV Data'),
           '#description' => $this->t('The formatted term data'),
           '#value' => $this->get_export,
-        );
+        ];
         break;
     }
 
