@@ -10,7 +10,7 @@ class ImportController {
 
   public function __construct($data, $vocabulary) {
     $this->vocabulary = $vocabulary;
-    $parts = explode(PHP_EOL, $data);
+    $parts = array_map('trim', explode(';', $data));
     $keys = str_getcsv($parts[0]);
     unset($parts[0]);
     foreach ($parts as $part) {

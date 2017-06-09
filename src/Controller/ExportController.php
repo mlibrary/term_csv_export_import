@@ -22,7 +22,7 @@ class ExportController {
     if ($include_ids) {
       $this->export = 'tid,uuid,'.$this->export.',parent_tid';
     }
-    $this->export = $this->export."\r\n";
+    $this->export = $this->export.";";
     foreach ($terms as $term) {
       // TODO - Inject.
       $parent = reset(\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadParents($term->id()));
@@ -37,7 +37,7 @@ class ExportController {
       if ($include_ids) {
         $to_export = $term->id().','.$term->uuid().','.$to_export.','.$parent_id;
       }
-      $this->export .= $to_export."\r\n";
+      $this->export .= $to_export.";";
     }
     return $this->export;
   }

@@ -27,7 +27,7 @@ class ImportForm extends FormBase {
     $form['input'] = array(
       '#type' => 'textarea',
       '#title' => $this->t('Input'),
-      '#description' => $this->t('Enter in the form of: <pre>"name,description,format,weight,parent_name"</pre> or <pre>"tid,name,description,format,weight,parent_name,parent_tid"</pre> depending on checkbox. See CSV Export for example.'),
+      '#description' => $this->t('Enter in the form of: <pre>"name,description,format,weight,parent_name;"</pre> or <pre>"tid,name,description,format,weight,parent_name,parent_tid;"</pre> depending on checkbox. See CSV Export for example.'),
     );
     $form['include_ids'] = [
       '#type' => 'checkbox',
