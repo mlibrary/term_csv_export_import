@@ -75,6 +75,13 @@ class ImportController {
       // Check for parents.
       if (!$parent_term && !empty($row['parent_name'])) {
         $parent_term = taxonomy_term_load_multiple_by_name($row['parent_name'], $this->vocabulary);
+        if (count($parent_term) > 1) {
+          unset($parent_term);
+          drupal_set_message('More than 1 terms are named '..'. Cannot distinguish by name. Try using id export/import.', 'error');
+        }
+        else {
+          $parent_term = $parent_term[0];
+        }
       }
       $parent_term_id = 0;
       if ($parent_term) {
