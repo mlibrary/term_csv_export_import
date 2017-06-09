@@ -45,7 +45,11 @@ class ImportController {
           ->fields('taxonomy_term_data', array('tid'))
           ->condition('taxonomy_term_data.tid', $row['tid'], '=');
         $tids = $query->execute()->fetchAll(\PDO::FETCH_OBJ);
-        if (!empty($tids)) {
+        $query1 = $db->select('taxonomy_term_field_data')
+          ->fields('taxonomy_term_field_data', array('tid'))
+          ->condition('taxonomy_term_field_data.tid', $row['tid'], '=');
+        $tids1 = $query1->execute()->fetchAll(\PDO::FETCH_OBJ);
+        if (!empty($tids) || !empty($tids1)) {
           drupal_set_message('The Term ID already exists.', 'error');
           continue;
         }
@@ -53,6 +57,9 @@ class ImportController {
         $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
         $db->insert('taxonomy_term_data')
           ->fields(array('tid' => $row['tid'], 'vid' => $this->vocabulary, 'uuid' => $row['uuid'], 'langcode' => $langcode))
+          ->execute();
+        $db->insert('taxonomy_term_field_data')
+          ->fields(array('tid' => $row['tid'], 'vid' => $this->vocabulary, 'name' => $row['name'], 'langcode' => $langcode, 'default_langcode' => 1, 'weight' => $row['weight']))
           ->execute();
         $new_term = Term::load($row['tid']);
         if (!empty($row['parent_tid'])) {
@@ -69,10 +76,13 @@ class ImportController {
       if (!$parent_term && !empty($row['parent_name'])) {
         $parent_term = taxonomy_term_load_multiple_by_name($row['parent_name'], $this->vocabulary);
       }
+      $parent_term_id = 0;
       if ($parent_term) {
-        $new_term->set('parent', ['target_id' => $parent_term->id()]);
+        $parent_term_id = $parent_term->id();
       }
+      $new_term->set('parent', ['target_id' => $parent_term_id]);
       $new_term->save();
+      $processed++;
     }
     drupal_set_message(t('Imported @count terms.', ['@count' => $processed]));
   }
