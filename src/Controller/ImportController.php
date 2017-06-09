@@ -65,7 +65,7 @@ class ImportController {
         ->setFormat($row['format'])
         ->setWeight($row['weight']);
       // Check for parents.
-      if (!$parent_term && !empty($row['parent_name']) {
+      if (!$parent_term && !empty($row['parent_name'])) {
         $parent_term = taxonomy_term_load_multiple_by_name($row['parent_name'], $this->vocabulary);
       }
       if ($parent_term) {
