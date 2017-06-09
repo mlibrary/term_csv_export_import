@@ -14,10 +14,11 @@ class ImportController {
     $keys = str_getcsv($parts[0]);
     unset($parts[0]);
     foreach ($parts as $part) {
+      if (empty($part)) {
+        continue;
+      }
       $this->data[] = array_combine($keys, str_getcsv($part));
     }
-    echo "<pre>";
-    exit(print_r($this->data));
   }
 
   public function execute($include_ids) {
@@ -71,6 +72,7 @@ class ImportController {
       if ($parent_term) {
         $new_term->set('parent', ['target_id' => $parent_term->id()]);
       }
+      $new_term->save();
     }
     drupal_set_message(t('Imported @count terms.', ['@count' => $processed]));
   }
