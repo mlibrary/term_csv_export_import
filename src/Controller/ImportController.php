@@ -31,7 +31,7 @@ class ImportController {
         $term_existing = taxonomy_term_load_multiple_by_name($row['name'], $this->vocabulary);
       }
       if ($term_existing) {
-        drupal_set_message('The term '.$row['name'].' already exists. Ignoring.';
+        drupal_set_message('The term '.$row['name'].' already exists. Ignoring.');
         continue;
       }
       // Set temp parent var.
