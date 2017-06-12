@@ -31,6 +31,10 @@ class ImportController {
     ];
     foreach ($parts as $part) {
       $array = str_getcsv($part);
+      if ($array == $keys_noid || $array == $keys_id) {
+        drupal_set_message('The header keys were not included in the import.', 'warning');
+        continue;
+      }
       $keys = [];
       if (count($array) == 8) {
         $keys = $keys_id;

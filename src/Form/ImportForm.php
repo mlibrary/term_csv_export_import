@@ -74,7 +74,7 @@ class ImportForm extends FormBase implements FormInterface {
         $form['input'] = [
           '#type' => 'textarea',
           '#title' => $this->t('Input'),
-          '#description' => $this->t('Enter in the form of: <pre>"name,description,format,weight,parent_name;"</pre> or <pre>"tid,uuid,name,description,format,weight,parent_name,parent_tid;"</pre> depending on checkbox. See CSV Export for example.'),
+          '#description' => $this->t('Enter in the form of: <pre>"name,description,format,weight,parent_name;</pre><pre>name,description,format,weight,parent_name;"</pre> or <pre>"tid,uuid,name,description,format,weight,parent_name,parent_tid;</pre><pre>tid,uuid,name,description,format,weight,parent_name,parent_tid;"</pre> See CSV Export for example.'),
         ];
         $vocabularies = taxonomy_vocabulary_get_names();
         $vocabularies['create_new'] = 'create_new';

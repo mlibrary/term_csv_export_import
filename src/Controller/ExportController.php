@@ -21,12 +21,19 @@ class ExportController {
   /**
    * {@inheritdoc}
    */
-  public function execute($include_ids) {
+  public function execute($include_ids, $include_headers) {
     // TODO Inject.
     $query = \Drupal::entityQuery('taxonomy_term');
     $query->condition('vid', $this->vocabulary);
     $tids = $query->execute();
     $terms = Term::loadMultiple($tids);
+    if ($include_headers) {
+      $this->export = 'name,description,format,weight,parent_name';
+      if ($include_ids) {
+        $this->export = 'tid,uuid,' . $this->export . ',parent_tid';
+      }
+      $this->export = $this->export . ";\n";
+    }
     foreach ($terms as $term) {
       // TODO - Inject.
       $parent = reset(\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadParents($term->id()));
