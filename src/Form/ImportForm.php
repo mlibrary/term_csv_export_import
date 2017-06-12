@@ -2,6 +2,8 @@
 
 namespace Drupal\term_csv_export_import\Form;
 
+use Drupal\taxonomy\Entity\Vocabulary;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -32,7 +34,7 @@ class ImportForm extends FormBase implements FormInterface {
   /**
    * The vocabulary storage.
    *
-   * @var \Drupal\taxonomy\VocabularyStorageInterface.
+   * @var \Drupal\taxonomy\VocabularyStorageInterface
    */
   protected $vocabularyStorage;
 
@@ -70,19 +72,19 @@ class ImportForm extends FormBase implements FormInterface {
     switch ($this->step) {
       case 1:
         $form['input'] = [
-        '#type' => 'textarea',
-        '#title' => $this->t('Input'),
-        '#description' => $this->t('Enter in the form of: <pre>"name,description,format,weight,parent_name;"</pre> or <pre>"tid,uuid,name,description,format,weight,parent_name,parent_tid;"</pre> depending on checkbox. See CSV Export for example.'),
-      ];
-      $vocabularies = taxonomy_vocabulary_get_names();
-      $vocabularies['create_new'] = 'create_new';
-      $form['vocabulary'] = [
-        '#type' => 'select',
-        '#title' => $this->t('Taxonomy'),
-        '#options' => $vocabularies,
-      ];
-      $value = $this->t('Next');
-      break;
+          '#type' => 'textarea',
+          '#title' => $this->t('Input'),
+          '#description' => $this->t('Enter in the form of: <pre>"name,description,format,weight,parent_name;"</pre> or <pre>"tid,uuid,name,description,format,weight,parent_name,parent_tid;"</pre> depending on checkbox. See CSV Export for example.'),
+        ];
+        $vocabularies = taxonomy_vocabulary_get_names();
+        $vocabularies['create_new'] = 'create_new';
+        $form['vocabulary'] = [
+          '#type' => 'select',
+          '#title' => $this->t('Taxonomy'),
+          '#options' => $vocabularies,
+        ];
+        $value = $this->t('Next');
+        break;
 
       case 2:
         $form['name'] = [
@@ -93,7 +95,7 @@ class ImportForm extends FormBase implements FormInterface {
         ];
         $form['vid'] = [
           '#type' => 'machine_name',
-          '#maxlength' => \Drupal\Core\Entity\EntityTypeInterface::BUNDLE_MAX_LENGTH,
+          '#maxlength' => EntityTypeInterface::BUNDLE_MAX_LENGTH,
           '#machine_name' => [
             'exists' => [$this, 'exists'],
             'source' => ['name'],
@@ -140,10 +142,10 @@ class ImportForm extends FormBase implements FormInterface {
         $form_state->setRebuild();
         break;
 
-        case 3:
+      case 3:
         $import = new ImportController(
-          $this->userInput['input'],
-          $this->userInput['vocabulary']
+        $this->userInput['input'],
+        $this->userInput['vocabulary']
         );
         $import->execute();
         break;
@@ -155,10 +157,10 @@ class ImportForm extends FormBase implements FormInterface {
    * {@inheritdoc}
    */
   public function createVocab($vid, $name) {
-    $vocabulary = \Drupal\taxonomy\Entity\Vocabulary::create([
-          'vid' => $vid,
-          'machine_name' => $vid,
-          'name' => $name,
+    $vocabulary = Vocabulary::create([
+      'vid' => $vid,
+      'machine_name' => $vid,
+      'name' => $name,
     ]);
     $vocabulary->save();
     return $vocabulary->id();

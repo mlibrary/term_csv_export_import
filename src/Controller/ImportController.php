@@ -18,11 +18,20 @@ class ImportController {
   public function __construct($data, $vocabulary) {
     $this->vocabulary = $vocabulary;
     $parts = array_filter(array_map('trim', preg_split('/;\r\n|;\r|;\n/', $data)));
-    $keys_noid = ['name','description','format','weight','parent_name'];
-    $keys_id = ['tid','uuid','name','description','format','weight','parent_name','parent_tid'];
+    $keys_noid = ['name', 'description', 'format', 'weight', 'parent_name'];
+    $keys_id = [
+      'tid',
+      'uuid',
+      'name',
+      'description',
+      'format',
+      'weight',
+      'parent_name',
+      'parent_tid',
+    ];
     foreach ($parts as $part) {
       $array = str_getcsv($part);
-      $keys =[];
+      $keys = [];
       if (count($array) == 8) {
         $keys = $keys_id;
       }
@@ -30,7 +39,7 @@ class ImportController {
         $keys = $keys_noid;
       }
       else {
-        drupal_set_message('Line with "'.$part.'" could not be parsed. Incorrect number of values.', 'error');
+        drupal_set_message('Line with "' . $part . '" could not be parsed. Incorrect number of values.', 'error');
         continue;
       }
       $this->data[] = array_combine($keys, $array);
@@ -51,7 +60,7 @@ class ImportController {
         $term_existing = taxonomy_term_load_multiple_by_name($row['name'], $this->vocabulary);
       }
       if ($term_existing) {
-        drupal_set_message('The term ' . $row['name'] . ' with id '.$row['tid'].' already exists. Ignoring.');
+        drupal_set_message('The term ' . $row['name'] . ' with id ' . $row['tid'] . ' already exists. Ignoring.');
         continue;
       }
       // Set temp parent var.
