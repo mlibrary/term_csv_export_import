@@ -17,38 +17,47 @@ class ImportController {
    */
   public function __construct($data, $vocabulary) {
     $this->vocabulary = $vocabulary;
-    $parts = array_map('trim', explode(';', $data));
-    $keys = str_getcsv($parts[0]);
-    unset($parts[0]);
+    $parts = array_filter(array_map('trim', preg_split('/;\r\n|;\r|;\n/', $data)));
+    $keys_noid = ['name','description','format','weight','parent_name'];
+    $keys_id = ['tid','uuid','name','description','format','weight','parent_name','parent_tid'];
     foreach ($parts as $part) {
-      if (empty($part)) {
+      $array = str_getcsv($part);
+      $keys =[];
+      if (count($array) == 8) {
+        $keys = $keys_id;
+      }
+      elseif (count($array) == 5) {
+        $keys = $keys_noid;
+      }
+      else {
+        drupal_set_message('Line with "'.$part.'" could not be parsed. Incorrect number of values.', 'error');
         continue;
       }
-      $this->data[] = array_combine($keys, str_getcsv($part));
+      $this->data[] = array_combine($keys, $array);
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function execute($include_ids) {
+  public function execute() {
     $processed = 0;
     foreach ($this->data as $row) {
       // Check for existence of terms.
-      if ($include_ids) {
+      if (isset($row['tid'])) {
         $term_existing = Term::load($row['tid']);
       }
       else {
         $term_existing = taxonomy_term_load_multiple_by_name($row['name'], $this->vocabulary);
       }
       if ($term_existing) {
-        drupal_set_message('The term ' . $row['name'] . ' already exists. Ignoring.');
+        drupal_set_message('The term ' . $row['name'] . ' with id '.$row['tid'].' already exists. Ignoring.');
         continue;
       }
       // Set temp parent var.
       $parent_term = NULL;
       // Create the term.
-      if ($include_ids) {
+      if (isset($row['tid'])) {
         // Double check for Term ID cause this could go bad.
         $db = Database::getConnection();
         $query = $db->select('taxonomy_term_data')
