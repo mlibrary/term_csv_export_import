@@ -108,7 +108,7 @@ class ImportForm extends FormBase implements FormInterface {
       case 3:
         $form['#title'] .= ' - ' . $this->t('Are you sure you want to copy @count_terms terms into the vocabulary @vocabulary?',
                                      [
-                                       '@count_terms' => count(array_filter(preg_split('/;\r\n|;\r|;\n/', $this->userInput['input']))),
+                                       '@count_terms' => count(array_filter(preg_split('/\r\n|\r|\n/', $this->userInput['input']))),
                                        '@vocabulary' => $this->userInput['vocabulary'],
                                      ]);
         $value = $this->t('Import');

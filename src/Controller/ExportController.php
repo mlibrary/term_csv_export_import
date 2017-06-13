@@ -27,29 +27,43 @@ class ExportController {
     $query->condition('vid', $this->vocabulary);
     $tids = $query->execute();
     $terms = Term::loadMultiple($tids);
+    $fp = fopen('php://memory', 'rw');
     if ($include_headers) {
-      $this->export = 'name,description,format,weight,parent_name';
+      $to_export = ['name', 'description', 'format', 'weight', 'parent_name'];
       if ($include_ids) {
-        $this->export = 'tid,uuid,' . $this->export . ',parent_tid';
+        $to_export = array_merge(['tid', 'uuid'], $to_export);
+        $to_export[] = 'parent_tid';
       }
-      $this->export = $this->export . ";\n";
+      fputcsv($fp, $to_export);
     }
     foreach ($terms as $term) {
       // TODO - Inject.
       $parent = reset(\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadParents($term->id()));
       $parent_name = '';
       $parent_id = '';
-      $to_export = '';
+      $to_export = [];
       if (!empty($parent)) {
         $parent_name = $parent->getName();
         $parent_id = $parent->id();
       }
-      $to_export = '"' . $term->getName() . '","' . $term->getDescription() . '",' . $term->getFormat() . ',' . $term->getWeight() . ',"' . $parent_name . '"';
+      $to_export = [
+        $term->getName(),
+        $term->getDescription(),
+        $term->getFormat(),
+        $term->getWeight(),
+        $parent_name,
+      ];
       if ($include_ids) {
-        $to_export = $term->id() . ',' . $term->uuid() . ',' . $to_export . ',' . $parent_id;
+        $to_export = array_merge([$term->id(), $term->uuid()], $to_export);
+        $to_export[] = $parent_id;
       }
-      $this->export .= $to_export . ";\n";
+      fputcsv($fp, $to_export);
     }
+    rewind($fp);
+    while (!feof($fp)) {
+      $this->export .= fread($fp, 8192);
+    }
+    fclose($fp);
     return $this->export;
   }
 

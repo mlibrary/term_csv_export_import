@@ -17,7 +17,16 @@ class ImportController {
    */
   public function __construct($data, $vocabulary) {
     $this->vocabulary = $vocabulary;
-    $parts = array_filter(array_map('trim', preg_split('/;\r\n|;\r|;\n/', $data)));
+    $temp = fopen('php://memory', 'rw');
+    fwrite($temp, $data);
+    rewind($temp);
+    $csvArray = [];
+    while (!feof($temp)) {
+      if ($csvRow = fgetcsv($temp)) {
+        $csvArray[] = $csvRow;
+      }
+    }
+    fclose($temp);
     $keys_noid = ['name', 'description', 'format', 'weight', 'parent_name'];
     $keys_id = [
       'tid',
@@ -29,24 +38,24 @@ class ImportController {
       'parent_name',
       'parent_tid',
     ];
-    foreach ($parts as $part) {
-      $array = str_getcsv($part);
-      if ($array == $keys_noid || $array == $keys_id) {
-        drupal_set_message(t('The header keys were not included in the import.'), 'warning');
-        continue;
-      }
+
+    if ($csvArray[0] == $keys_noid || $csvArray[0] == $keys_id) {
+      drupal_set_message(t('The header keys were not included in the import.'), 'warning');
+      unset($csvArray[0]);
+    }
+    foreach ($csvArray as $csvLine) {
       $keys = [];
-      if (count($array) == 8) {
+      if (count($csvLine) == 8) {
         $keys = $keys_id;
       }
-      elseif (count($array) == 5) {
+      elseif (count($csvLine) == 5) {
         $keys = $keys_noid;
       }
       else {
-        drupal_set_message(t('Line with "@part" could not be parsed. Incorrect number of values.', ['@part' => $part]), 'error');
+        drupal_set_message(t('Line with "@part" could not be parsed. Incorrect number of values.', ['@part' => implode(',', $csvLine)]), 'error');
         continue;
       }
-      $this->data[] = array_combine($keys, $array);
+      $this->data[] = array_combine($keys, $csvLine);
     }
   }
 
