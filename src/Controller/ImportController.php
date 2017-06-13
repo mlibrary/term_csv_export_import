@@ -32,7 +32,7 @@ class ImportController {
     foreach ($parts as $part) {
       $array = str_getcsv($part);
       if ($array == $keys_noid || $array == $keys_id) {
-        drupal_set_message(t('The header keys were not included in the import.'), 'warning');
+        drupal_set_message($this->t('The header keys were not included in the import.'), 'warning');
         continue;
       }
       $keys = [];
@@ -43,7 +43,7 @@ class ImportController {
         $keys = $keys_noid;
       }
       else {
-        drupal_set_message(t('Line with "' . $part . '" could not be parsed. Incorrect number of values.'), 'error');
+        drupal_set_message($this->t('Line with "@part" could not be parsed. Incorrect number of values.', ['@part' => $part]), 'error');
         continue;
       }
       $this->data[] = array_combine($keys, $array);
@@ -64,7 +64,7 @@ class ImportController {
         $term_existing = taxonomy_term_load_multiple_by_name($row['name'], $this->vocabulary);
       }
       if ($term_existing) {
-        drupal_set_message(t('The term ' . $row['name'] . ' with id ' . $row['tid'] . ' already exists. Ignoring.'));
+        drupal_set_message($this->t('The term @name with id @tid already exists. Ignoring.', ['@name' => $row['name'], '@tid' => $row['tid']]));
         continue;
       }
       // Set temp parent var.
@@ -121,7 +121,7 @@ class ImportController {
         $parent_term = taxonomy_term_load_multiple_by_name($row['parent_name'], $this->vocabulary);
         if (count($parent_term) > 1) {
           unset($parent_term);
-          drupal_set_message(t('More than 1 terms are named ' . $row['parent_name'] . '. Cannot distinguish by name. Try using id export/import.'), 'error');
+          drupal_set_message($this->t('More than 1 terms are named @name. Cannot distinguish by name. Try using id export/import.', ['@name' => $row['parent_name']]), 'error');
         }
         else {
           $parent_term = array_values($parent_term)[0];
