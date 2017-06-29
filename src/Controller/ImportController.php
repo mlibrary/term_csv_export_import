@@ -45,15 +45,23 @@ class ImportController {
     }
     foreach ($csvArray as $csvLine) {
       $keys = [];
-      if (count($csvLine) == 8) {
+      $num_of_lines = count($csvLine);
+      if (in_array($num_of_lines, [8, 9])) {
         $keys = $keys_id;
       }
-      elseif (count($csvLine) == 5) {
+      elseif (in_array($num_of_lines, [5, 6])) {
         $keys = $keys_noid;
       }
       else {
-        drupal_set_message(t('Line with "@part" could not be parsed. Incorrect number of values.', ['@part' => implode(',', $csvLine)]), 'error');
+        drupal_set_message(t('Line with "@part" could not be parsed. Incorrect number of values: @count.',
+          [
+            '@part' => implode(',', $csvLine),
+            '@count' => count($csvLine),
+          ]), 'error');
         continue;
+      }
+      if (in_array($num_of_lines, [6, 9])) {
+        $keys[] = 'fields';
       }
       $this->data[] = array_combine($keys, $csvLine);
     }
@@ -115,6 +123,7 @@ class ImportController {
           ])
           ->execute();
         $new_term = Term::load($row['tid']);
+
         if (!empty($row['parent_tid'])) {
           $parent_term = Term::load($row['parent_tid']);
         }
@@ -141,6 +150,26 @@ class ImportController {
         $parent_term_id = $parent_term->id();
       }
       $new_term->set('parent', ['target_id' => $parent_term_id]);
+
+      // Import all other non-default taxonomy fields if the row is there.
+      if (isset($row['fields']) && !empty($row['fields'])) {
+        parse_str($row['fields'], $field_array);
+        if (!is_array($field_array)) {
+          drupal_set_message(t('The field data <em>@data</em> is not formatted correctly. Please use the export function.', ['@data' => $row['fields']]), 'error');
+          continue;
+        }
+        else {
+          foreach ($field_array as $field_name => $field_values) {
+            if ($new_term->hasField($field_name)) {
+              $new_term->set($field_name, $field_values);
+            }
+            else {
+              drupal_set_message(t('The field data <em>@data</em> could not be imported. Please add the appropriate fields to the vocabulary you are importing into.', ['@data' => $row['fields']]), 'warning');
+            }
+          }
+        }
+      }
+
       $new_term->save();
       $processed++;
     }

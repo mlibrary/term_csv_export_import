@@ -52,6 +52,11 @@ class ExportForm extends FormBase {
           '#type' => 'checkbox',
           '#title' => $this->t('Include Term Headers in export.'),
         ];
+        $form['include_additional_fields'] = [
+          '#type' => 'checkbox',
+          '#title' => $this->t('Include extra fields in export.'),
+          '#description' => $this->t('Note that fields are stringified using <a href="http://www.php.net/http_build_query">http_build_query</a>'),
+        ];
         $form['submit'] = [
           '#type' => 'submit',
           '#value' => $this->t('Export'),
@@ -80,7 +85,7 @@ class ExportForm extends FormBase {
     $export = new ExportController(
       $form_state->getValue('vocabulary')
     );
-    $this->getExport = $export->execute($form_state->getValue('include_ids'), $form_state->getValue('include_headers'));
+    $this->getExport = $export->execute($form_state->getValue('include_ids'), $form_state->getValue('include_headers'), $form_state->getValue('include_additional_fields'));
     $form_state->setRebuild();
   }
 
