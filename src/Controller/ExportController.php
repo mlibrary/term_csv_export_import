@@ -75,8 +75,8 @@ class ExportController {
         foreach ($term->getFields() as $field) {
           if (!in_array($field->getName(), $standardTaxonomyFields)) {
             foreach ($field->getValue() as $values) {
-              foreach ($values as $type => $value) {
-                // Skipping type here. More complicated and seems unnecessary.
+              foreach ($values as $value) {
+                // Skipping type (the key) here. More complicated and seems unnecessary.
                 $field_export[$field->getName()][] = $value;
               }
             }
