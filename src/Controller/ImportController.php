@@ -38,30 +38,32 @@ class ImportController {
       'parent_name',
       'parent_tid',
     ];
-
-    if ($csvArray[0] == $keys_noid || $csvArray[0] == $keys_id) {
+    $keys = [];
+    if (!array_diff($keys_noid, $csvArray[0])) {
       drupal_set_message(t('The header keys were not included in the import.'), 'warning');
+      $keys = $csvArray[0];
       unset($csvArray[0]);
     }
     foreach ($csvArray as $csvLine) {
-      $keys = [];
       $num_of_lines = count($csvLine);
-      if (in_array($num_of_lines, [8, 9])) {
-        $keys = $keys_id;
-      }
-      elseif (in_array($num_of_lines, [5, 6])) {
-        $keys = $keys_noid;
-      }
-      else {
-        drupal_set_message(t('Line with "@part" could not be parsed. Incorrect number of values: @count.',
-          [
-            '@part' => implode(',', $csvLine),
-            '@count' => count($csvLine),
-          ]), 'error');
-        continue;
-      }
-      if (in_array($num_of_lines, [6, 9])) {
-        $keys[] = 'fields';
+      if (empty($keys)) {
+        if (in_array($num_of_lines, [8, 9])) {
+          $keys = $keys_id;
+        }
+        elseif (in_array($num_of_lines, [5, 6])) {
+          $keys = $keys_noid;
+        }
+        else {
+          drupal_set_message(t('Line with "@part" could not be parsed. Incorrect number of values: @count.',
+            [
+              '@part' => implode(',', $csvLine),
+              '@count' => count($csvLine),
+            ]), 'error');
+          continue;
+        }
+        if (in_array($num_of_lines, [6, 9])) {
+          $keys[] = 'fields';
+        }
       }
       $this->data[] = array_combine($keys, $csvLine);
     }
@@ -85,7 +87,7 @@ class ImportController {
         continue;
       }
       // Set temp parent var.
-      $parent_term = NULL;
+      $parent_terms = NULL;
       // Create the term.
       if (isset($row['tid'])) {
         // Double check for Term ID cause this could go bad.
@@ -125,7 +127,15 @@ class ImportController {
         $new_term = Term::load($row['tid']);
 
         if (!empty($row['parent_tid'])) {
-          $parent_term = Term::load($row['parent_tid']);
+          if (strpos($row['parent_tid'],';') !== FALSE) {
+            $parent_tids =  array_filter(explode(';',$row['parent_tid']), 'strlen');
+            foreach ($parent_tids as $parent_tid) {
+              $parent_terms[] = Term::load($parent_tid);
+            }
+          }
+          else {
+            $parent_terms[] = Term::load($row['parent_tid']);
+          }
         }
       }
       else {
@@ -135,21 +145,29 @@ class ImportController {
         ->setFormat($row['format'])
         ->setWeight($row['weight']);
       // Check for parents.
-      if ($parent_term == NULL && !empty($row['parent_name'])) {
-        $parent_term = taxonomy_term_load_multiple_by_name($row['parent_name'], $this->vocabulary);
-        if (count($parent_term) > 1) {
-          unset($parent_term);
-          drupal_set_message(t('More than 1 terms are named @name. Cannot distinguish by name. Try using id export/import.', ['@name' => $row['parent_name']]), 'error');
-        }
-        else {
-          $parent_term = array_values($parent_term)[0];
+      if ($parent_terms == NULL && !empty($row['parent_name'])) {
+        $parent_names = explode(';',$row['parent_name']);
+        foreach ($parent_names as $parent_name) {
+          $parent_term = taxonomy_term_load_multiple_by_name($parent_name, $this->vocabulary);
+          if (count($parent_term) > 1) {
+            unset($parent_term);
+            drupal_set_message(t('More than 1 terms are named @name. Cannot distinguish by name. Try using id export/import.', ['@name' => $row['parent_name']]), 'error');
+          }
+          else {
+            $parent_terms[] = array_values($parent_term)[0];
+          }
         }
       }
-      $parent_term_id = 0;
-      if ($parent_term) {
-        $parent_term_id = $parent_term->id();
+      if ($parent_terms) {
+        $parent_tids = [];
+        foreach ($parent_terms as $parent_term) {
+          $parent_tids[] = $parent_term->id();
+        }
+        $new_term->parent = $parent_tids;
       }
-      $new_term->set('parent', ['target_id' => $parent_term_id]);
+      else {
+        $new_term->parent = 0;
+      }
 
       // Import all other non-default taxonomy fields if the row is there.
       if (isset($row['fields']) && !empty($row['fields'])) {

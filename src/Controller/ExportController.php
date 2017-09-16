@@ -51,25 +51,40 @@ class ExportController {
         $to_export = array_merge(['tid', 'uuid'], $to_export);
         $to_export[] = 'parent_tid';
       }
+      if ($include_fields) {
+        $to_export[] = 'fields';
+      }
     }
     fputcsv($fp, $to_export);
     foreach ($terms as $term) {
       // TODO - Inject.
-      $parent = reset(\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadParents($term->id()));
-      $parent_name = '';
-      $parent_id = '';
+      $parents = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadParents($term->id());
+      $parent_names = '';
+      $parent_ids = '';
       $to_export = [];
-      if (!empty($parent)) {
-        $parent_name = $parent->getName();
-        $parent_id = $parent->id();
+      if (!empty($parents)) {
+        if (count($parents > 1)) {
+          foreach ($parents as $parent) {
+            $parent_names .= $parent->getName().';';
+            $parent_ids .= $parent->id().';';
+          }
+        }
+        else {
+          $parent_names = $parents[0]->getName();
+          $parent_ids = $parents[0]->id();
+        }
       }
       $to_export = [
         $term->getName(),
         $term->getDescription(),
         $term->getFormat(),
         $term->getWeight(),
-        $parent_name,
+        $parent_names,
       ];
+      if ($include_ids) {
+        $to_export = array_merge([$term->id(), $term->uuid()], $to_export);
+        $to_export[] = $parent_ids;
+      }
       if ($include_fields) {
         $field_export = [];
         foreach ($term->getFields() as $field) {
@@ -84,10 +99,6 @@ class ExportController {
         }
         $fields = http_build_query($field_export);
         $to_export[] = $fields;
-      }
-      if ($include_ids) {
-        $to_export = array_merge([$term->id(), $term->uuid()], $to_export);
-        $to_export[] = $parent_id;
       }
       fputcsv($fp, $to_export);
     }
