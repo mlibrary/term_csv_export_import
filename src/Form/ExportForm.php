@@ -5,6 +5,7 @@ namespace Drupal\term_csv_export_import\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\term_csv_export_import\Controller\ExportController;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class ExportForm.
@@ -31,6 +32,25 @@ class ExportForm extends FormBase {
    */
   public function getFormId() {
     return 'export_form';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+   protected $container;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(ContainerInterface $container) {
+    $this->container = $container;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static($container);
   }
 
   /**
@@ -83,6 +103,7 @@ class ExportForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->step++;
     $export = new ExportController(
+      $this->container->get('entity_type.manager')->getStorage('taxonomy_term'),
       $form_state->getValue('vocabulary')
     );
     $this->getExport = $export->execute($form_state->getValue('include_ids'), $form_state->getValue('include_headers'), $form_state->getValue('include_additional_fields'));

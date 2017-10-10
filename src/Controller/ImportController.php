@@ -159,6 +159,7 @@ class ImportController {
         }
       }
       if ($parent_terms) {
+        $parent_terms = array_filter($parent_terms);
         $parent_tids = [];
         foreach ($parent_terms as $parent_term) {
           $parent_tids[] = $parent_term->id();

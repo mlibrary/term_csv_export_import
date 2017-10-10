@@ -2,19 +2,23 @@
 
 namespace Drupal\term_csv_export_import\Controller;
 
+use Drupal\Core\Controller\ControllerBase;
 use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\TermStorage;
 
 /**
  * Class ExportController.
  */
-class ExportController {
+class ExportController extends ControllerBase {
   protected  $vocabulary;
+  protected $term_storage;
   public $export;
 
   /**
    * {@inheritdoc}
    */
-  public function __construct($vocabulary) {
+  public function __construct(TermStorage $term_storage, $vocabulary) {
+    $this->term_storage = $term_storage;
     $this->vocabulary = $vocabulary;
   }
 
@@ -22,11 +26,7 @@ class ExportController {
    * {@inheritdoc}
    */
   public function execute($include_ids, $include_headers, $include_fields) {
-    // TODO Inject.
-    $query = \Drupal::entityQuery('taxonomy_term');
-    $query->condition('vid', $this->vocabulary);
-    $tids = $query->execute();
-    $terms = Term::loadMultiple($tids);
+    $terms = $this->term_storage->loadTree($this->vocabulary);
     $fp = fopen('php://memory', 'rw');
     $standardTaxonomyFields = [
       'tid',
@@ -57,8 +57,7 @@ class ExportController {
     }
     fputcsv($fp, $to_export);
     foreach ($terms as $term) {
-      // TODO - Inject.
-      $parents = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadParents($term->id());
+      $parents = $this->term_storage->loadParents($term->tid);
       $parent_names = '';
       $parent_ids = '';
       $to_export = [];
@@ -75,19 +74,19 @@ class ExportController {
         }
       }
       $to_export = [
-        $term->getName(),
-        $term->getDescription(),
-        $term->getFormat(),
-        $term->getWeight(),
+        $term->name,
+        $term->description,
+        $term->format,
+        $term->weight,
         $parent_names,
       ];
       if ($include_ids) {
-        $to_export = array_merge([$term->id(), $term->uuid()], $to_export);
+        $to_export = array_merge([$term->tid, $term->uuid], $to_export);
         $to_export[] = $parent_ids;
       }
       if ($include_fields) {
         $field_export = [];
-        foreach ($term->getFields() as $field) {
+        foreach ($this->term_storage->load($term->tid)->getFields() as $field) {
           if (!in_array($field->getName(), $standardTaxonomyFields)) {
             foreach ($field->getValue() as $values) {
               foreach ($values as $value) {
