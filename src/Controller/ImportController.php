@@ -141,8 +141,8 @@ class ImportController {
       else {
         $new_term = Term::create(['name' => $row['name'], 'vid' => $this->vocabulary]);
       }
-      $new_term->setDescription($row['description'])
-        ->setFormat($row['format'])
+      $new_term->setDescription($row['description__value'])
+        ->setFormat($row['description__format'])
         ->setWeight($row['weight']);
       // Check for parents.
       if ($parent_terms == NULL && !empty($row['parent_name'])) {
