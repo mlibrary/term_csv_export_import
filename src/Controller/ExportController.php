@@ -46,7 +46,7 @@ class ExportController extends ControllerBase {
     $to_export = [];
 
     if ($include_headers) {
-      $to_export = ['name', 'description', 'format', 'weight', 'parent_name'];
+      $to_export = ['name', 'description__value', 'description__format', 'weight', 'parent_name'];
       if ($include_ids) {
         $to_export = array_merge(['tid', 'uuid'], $to_export);
         $to_export[] = 'parent_tid';
@@ -75,8 +75,8 @@ class ExportController extends ControllerBase {
       }
       $to_export = [
         $term->name,
-        $term->description,
-        $term->format,
+        $term->description__value,
+        $term->description__format,
         $term->weight,
         $parent_names,
       ];

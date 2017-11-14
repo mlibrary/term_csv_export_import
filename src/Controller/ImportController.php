@@ -27,13 +27,13 @@ class ImportController {
       }
     }
     fclose($temp);
-    $keys_noid = ['name', 'description', 'format', 'weight', 'parent_name'];
+    $keys_noid = ['name', 'description__value', 'description__format', 'weight', 'parent_name'];
     $keys_id = [
       'tid',
       'uuid',
       'name',
-      'description',
-      'format',
+      'description__value',
+      'description__format',
       'weight',
       'parent_name',
       'parent_tid',
