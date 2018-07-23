@@ -72,24 +72,32 @@ class ImportController {
   /**
    * {@inheritdoc}
    */
-  public function execute() {
+  public function execute($preserve_vocabularies) {
     $processed = 0;
     foreach ($this->data as $row) {
+      //remove whitespace
+      foreach ($row as $key => $value) {
+        $row[$key] = trim($value);
+      }
       // Check for existence of terms.
       if (isset($row['tid'])) {
         $term_existing = Term::load($row['tid']);
       }
       else {
         $term_existing = taxonomy_term_load_multiple_by_name($row['name'], $this->vocabulary);
+        if (count($term_existing) > 1) {
+          drupal_set_message(t('The term @name has multiple matches. Ignoring.', ['@name' => $row['name']]));
+          continue;
+        }
+        else {
+          $term_existing = $term_existing[0];
+        }
       }
       if ($term_existing) {
-        drupal_set_message(t('The term @name with id @tid already exists. Ignoring.', ['@name' => $row['name'], '@tid' => $row['tid']]));
-        continue;
+        $new_term = $term_existing;
       }
-      // Set temp parent var.
-      $parent_terms = NULL;
-      // Create the term.
-      if (isset($row['tid'])) {
+      // Or create the term.
+      elseif (isset($row['tid'])) {
         // Double check for Term ID cause this could go bad.
         $db = Database::getConnection();
         $query = $db->select('taxonomy_term_data')
@@ -125,23 +133,46 @@ class ImportController {
           ])
           ->execute();
         $new_term = Term::load($row['tid']);
-
-        if (!empty($row['parent_tid'])) {
-          if (strpos($row['parent_tid'],';') !== FALSE) {
-            $parent_tids =  array_filter(explode(';',$row['parent_tid']), 'strlen');
-            foreach ($parent_tids as $parent_tid) {
-              $parent_terms[] = Term::load($parent_tid);
-            }
-          }
-          else {
-            $parent_terms[] = Term::load($row['parent_tid']);
-          }
-        }
       }
       else {
         $new_term = Term::create(['name' => $row['name'], 'vid' => $this->vocabulary]);
       }
+      // Change the vocabulary if requested.
+      if ($new_term->getVocabularyId() != $this->vocabulary && !$preserve_vocabularies) {
+        // TODO: Make this work. 
+        // $new_term->vid->setValue($this->vocabulary);
+        // Currently get an EntityStorageException when field does not exist in new vocab.
+        // TODO: Save the term so fields are set properly when above todo done.
+        // $new_term->save();
+        // So, we update the db instead.
+        $tid = $new_term->id();
+        $db = Database::getConnection();
+        $db->update('taxonomy_term_data')
+          ->fields(['vid' => $this->vocabulary])
+          ->condition('tid', $tid, '=')
+          ->execute();
+        $db->update('taxonomy_term_field_data')
+          ->fields(['vid' => $this->vocabulary])
+          ->condition('tid', $tid, '=')
+          ->execute();
+        \Drupal::entityTypeManager()->getStorage('taxonomy_term')->resetCache([$tid]);
+        $new_term = Term::load($tid);
+      }
+      // Set temp parents.
+      $parent_terms = NULL;
+      if (!empty($row['parent_tid'])) {
+        if (strpos($row['parent_tid'],';') !== FALSE) {
+          $parent_tids =  array_filter(explode(';',$row['parent_tid']), 'strlen');
+          foreach ($parent_tids as $parent_tid) {
+            $parent_terms[] = Term::load($parent_tid);
+          }
+        }
+        else {
+          $parent_terms[] = Term::load($row['parent_tid']);
+        }
+      }
       $new_term->setDescription($row['description__value'])
+        ->setName($row['name'])
         ->setFormat($row['description__format'])
         ->setWeight($row['weight']);
       // Check for parents.

@@ -76,6 +76,10 @@ class ImportForm extends FormBase implements FormInterface {
           '#title' => $this->t('Input'),
           '#description' => $this->t('<p><strong>See CSV Export for an example.</strong></p><p>Enter in the form of: <pre>"name,description,format,weight,parent_name,[any_additional_fields];</pre><pre>name,description,format,weight,parent_name[;parent_name1;parent_name2;...],[any_additional_fields]"</pre> or <pre>"tid,uuid,name,description,format,weight,parent_name[;parent_name1;parent_name2;...],parent_tid[;parent_tid1;parent_tid2;...],[any_additional_fields];</pre><pre>tid,uuid,name,description,format,weight,parent_name,parent_tid,[any_additional_fields]"</pre> Note that <em>[any_additional_fields]</em> are optional and are stringified using <a href="http://www.php.net/http_build_query">http_build_query</a>.</p>'),
         ];
+        $form['preserve_vocabularies'] = [
+          '#type' => 'checkbox',
+          '#title' => $this->t('Preserve Vocabularies on existing terms.'),
+        ];
         $vocabularies = taxonomy_vocabulary_get_names();
         $vocabularies['create_new'] = 'create_new';
         $form['vocabulary'] = [
@@ -106,10 +110,15 @@ class ImportForm extends FormBase implements FormInterface {
         break;
 
       case 3:
-        $form['#title'] .= ' - ' . $this->t('Are you sure you want to copy @count_terms terms into the vocabulary @vocabulary?',
+        $preserve = '';
+        if ($this->userInput['preserve_vocabularies']) {
+          $preserve = " and preserve vocabularies on existing terms";
+        }
+        $form['#title'] .= ' - ' . $this->t('Are you sure you want to copy @count_terms terms into the vocabulary @vocabulary@preserve_vocabularies?',
                                      [
                                        '@count_terms' => count(array_filter(preg_split('/\r\n|\r|\n/', $this->userInput['input']))) - 1,
                                        '@vocabulary' => $this->userInput['vocabulary'],
+                                       '@preserve_vocabularies' => $preserve,
                                      ]);
         $value = $this->t('Import');
         break;
@@ -132,6 +141,7 @@ class ImportForm extends FormBase implements FormInterface {
           $this->step++;
           $this->userInput['vocabulary'] = $form_state->getValue('vocabulary');
         }
+        $this->userInput['preserve_vocabularies'] = $form_state->getValue('preserve_vocabularies');
         $this->userInput['input'] = $form_state->getValue('input');
         $form_state->setRebuild();
         break;
@@ -147,7 +157,7 @@ class ImportForm extends FormBase implements FormInterface {
         $this->userInput['input'],
         $this->userInput['vocabulary']
         );
-        $import->execute();
+        $import->execute($this->userInput['preserve_vocabularies']);
         break;
     }
     $this->step++;
