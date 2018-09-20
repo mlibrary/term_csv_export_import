@@ -4,3 +4,6 @@ description: Import and Export Taxonomy terms as csv.
 core: 8.x
 package: Taxonomy
 configure: term_csv_export_import.import
+dependencies:
+  - taxonomy
+  - drupal:system (>= 8.6)

@@ -4,6 +4,7 @@ namespace Drupal\term_csv_export_import\Controller;
 
 use Drupal\Core\Database\Database;
 use Drupal\taxonomy\Entity\Term;
+use Drupal\Core\Cache\Cache;
 
 /**
  * Class ImportController.
@@ -27,11 +28,12 @@ class ImportController {
       }
     }
     fclose($temp);
-    $keys_noid = ['name', 'description__value', 'description__format', 'weight', 'parent_name'];
+    $keys_noid = ['name', 'status', 'description__value', 'description__format', 'weight', 'parent_name'];
     $keys_id = [
       'tid',
       'uuid',
       'name',
+      'status',
       'description__value',
       'description__format',
       'weight',
@@ -47,10 +49,10 @@ class ImportController {
     foreach ($csvArray as $csvLine) {
       $num_of_lines = count($csvLine);
       if (empty($keys)) {
-        if (in_array($num_of_lines, [8, 9])) {
+        if (in_array($num_of_lines, [9, 10])) {
           $keys = $keys_id;
         }
-        elseif (in_array($num_of_lines, [5, 6])) {
+        elseif (in_array($num_of_lines, [6, 7])) {
           $keys = $keys_noid;
         }
         else {
@@ -61,7 +63,7 @@ class ImportController {
             ]), 'error');
           continue;
         }
-        if (in_array($num_of_lines, [6, 9])) {
+        if (in_array($num_of_lines, [7, 10])) {
           $keys[] = 'fields';
         }
       }
@@ -73,6 +75,10 @@ class ImportController {
    * {@inheritdoc}
    */
   public function execute($preserve_vocabularies) {
+    // We need to invalidate caches to pull direct from db.
+    Cache::invalidateTags(array(
+      'taxonomy_term_values',
+    ));
     $processed = 0;
     foreach ($this->data as $row) {
       //remove whitespace
@@ -126,6 +132,7 @@ class ImportController {
           ->fields([
             'tid' => $row['tid'],
             'vid' => $this->vocabulary,
+            'status' => $row['status'],
             'name' => $row['name'],
             'langcode' => $langcode,
             'default_langcode' => 1,
@@ -135,7 +142,7 @@ class ImportController {
         $new_term = Term::load($row['tid']);
       }
       else {
-        $new_term = Term::create(['name' => $row['name'], 'vid' => $this->vocabulary]);
+        $new_term = Term::create(['name' => $row['name'], 'vid' => $this->vocabulary, 'status' => $row['status']]);
       }
       // Change the vocabulary if requested.
       if ($new_term->getVocabularyId() != $this->vocabulary && !$preserve_vocabularies) {
