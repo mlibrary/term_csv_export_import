@@ -142,7 +142,7 @@ class ImportController {
         $new_term = Term::load($row['tid']);
       }
       else {
-        $new_term = Term::create(['name' => $row['name'], 'vid' => $this->vocabulary, 'status' => $row['status']]);
+        $new_term = Term::create(['name' => $row['name'], 'vid' => $this->vocabulary, 'status' => $row['status'], 'langcode' => $langcode]);
       }
       // Change the vocabulary if requested.
       if ($new_term->getVocabularyId() != $this->vocabulary && !$preserve_vocabularies) {
@@ -181,7 +181,7 @@ class ImportController {
       $new_term->setDescription($row['description__value'])
         ->setName($row['name'])
         ->set('status', $row['status'])
-        ->set('default_langcode', $langcode)
+        ->set('langcode', $langcode)
         ->setFormat($row['description__format'])
         ->setWeight($row['weight']);
       // Check for parents.
