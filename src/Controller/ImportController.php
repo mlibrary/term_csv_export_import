@@ -57,7 +57,7 @@ class ImportController {
       $needs_revision = false;
       if (in_array($num_of_lines, [9, 10]) && $may_need_revision) {
         // This export may be from an earlier version. Check for revision_id.
-        if (!is_numeric($csvLine[4]) {
+        if (!is_numeric($csvLine[4])) {
           // The default revision_id in 8.7 is the tid.
           array_splice($csvLine, 4, 0, $csvLine[0]);
           $needs_revision = true;
@@ -84,6 +84,7 @@ class ImportController {
       }
       if ($needs_revision) {
         array_splice($keys, 4, 0, 'revision_id');
+        $needs_revision = false;
       }
       $this->data[] = array_combine($keys, $csvLine);
     }
