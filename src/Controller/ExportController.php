@@ -35,6 +35,7 @@ class ExportController extends ControllerBase {
       'vid',
       'name',
       'status',
+      'revision_id',
       'description__value',
       'description__format',
       'weight',
@@ -51,6 +52,7 @@ class ExportController extends ControllerBase {
       if ($include_ids) {
         $to_export = array_merge(['tid', 'uuid'], $to_export);
         $to_export[] = 'parent_tid';
+        array_splice($to_export, 4, 0, 'revision_id');
       }
       if ($include_fields) {
         $to_export[] = 'fields';
@@ -85,6 +87,7 @@ class ExportController extends ControllerBase {
       if ($include_ids) {
         $to_export = array_merge([$term->tid, $this->term_storage->load($term->tid)->uuid()], $to_export);
         $to_export[] = $parent_ids;
+        array_splice($to_export, 4, 0, $term->getRevisionId());
       }
       if ($include_fields) {
         $field_export = [];

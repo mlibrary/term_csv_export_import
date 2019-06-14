@@ -34,6 +34,7 @@ class ImportController {
       'uuid',
       'name',
       'status',
+      'revision_id',
       'description__value',
       'description__format',
       'weight',
@@ -41,15 +42,29 @@ class ImportController {
       'parent_tid',
     ];
     $keys = [];
+    $may_need_revision = true;
     if (!array_diff($keys_noid, $csvArray[0])) {
       drupal_set_message(t('The header keys were not included in the import.'), 'warning');
       $keys = $csvArray[0];
+      if (isset($keys['revision_id'])) {
+        // This is not an export from an earlier version.
+        $may_need_revision = false;
+      }
       unset($csvArray[0]);
     }
     foreach ($csvArray as $csvLine) {
       $num_of_lines = count($csvLine);
+      $needs_revision = false;
+      if (in_array($num_of_lines, [9, 10]) && $may_need_revision) {
+        // This export may be from an earlier version. Check for revision_id.
+        if (!is_numeric($csvLine[4]) {
+          // The default revision_id in 8.7 is the tid.
+          array_splice($csvLine, 4, 0, $csvLine[0]);
+          $needs_revision = true;
+        }
+      }
       if (empty($keys)) {
-        if (in_array($num_of_lines, [9, 10])) {
+        if (in_array($num_of_lines, [10, 11])) {
           $keys = $keys_id;
         }
         elseif (in_array($num_of_lines, [6, 7])) {
@@ -63,9 +78,12 @@ class ImportController {
             ]), 'error');
           continue;
         }
-        if (in_array($num_of_lines, [7, 10])) {
+        if (in_array($num_of_lines, [7, 11])) {
           $keys[] = 'fields';
         }
+      }
+      if ($needs_revision) {
+        array_splice($keys, 4, 0, 'revision_id');
       }
       $this->data[] = array_combine($keys, $csvLine);
     }
@@ -125,6 +143,7 @@ class ImportController {
             'tid' => $row['tid'],
             'vid' => $this->vocabulary,
             'uuid' => $row['uuid'],
+            'revision_id' => $row['revision_id'],
             'langcode' => $langcode,
           ])
           ->execute();
@@ -133,10 +152,31 @@ class ImportController {
             'tid' => $row['tid'],
             'vid' => $this->vocabulary,
             'status' => $row['status'],
+            'revision_id' => $row['revision_id'],
             'name' => $row['name'],
             'langcode' => $langcode,
             'default_langcode' => 1,
             'weight' => $row['weight'],
+            'revision_translation_affected' => 1,
+          ])
+          ->execute();
+        $db->insert('taxonomy_term_revision')
+          ->fields([
+            'tid' => $row['tid'],
+            'revision_id' => $row['revision_id'],
+            'langcode' => $langcode,
+            'revision_default' => 1,
+          ])
+          ->execute();
+        $db->insert('taxonomy_term_field_revision')
+          ->fields([
+            'tid' => $row['tid'],
+            'status' => $row['status'],
+            'revision_id' => $row['revision_id'],
+            'name' => $row['name'],
+            'langcode' => $langcode,
+            'default_langcode' => 1,
+            'revision_translation_affected' => 1,
           ])
           ->execute();
         $new_term = Term::load($row['tid']);
