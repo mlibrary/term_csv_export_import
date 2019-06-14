@@ -61,6 +61,7 @@ class ImportController {
           // The default revision_id in 8.7 is the tid.
           array_splice($csvLine, 4, 0, $csvLine[0]);
           $needs_revision = true;
+          $num_of_lines += 1;
         }
       }
       if (empty($keys)) {
