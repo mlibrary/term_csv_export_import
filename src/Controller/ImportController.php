@@ -82,7 +82,7 @@ class ImportController {
           $keys[] = 'fields';
         }
       }
-      if ($needs_revision && !isset($keys['revision_id'])) {
+      if ($needs_revision && !in_array('revision_id', $keys)) {
         array_splice($keys, 4, 0, 'revision_id');
       }
       $this->data[] = array_combine($keys, $csvLine);
