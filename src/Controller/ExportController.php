@@ -87,7 +87,7 @@ class ExportController extends ControllerBase {
       if ($include_ids) {
         $to_export = array_merge([$term->tid, $this->term_storage->load($term->tid)->uuid()], $to_export);
         $to_export[] = $parent_ids;
-        array_splice($to_export, 4, 0, $term->getRevisionId());
+        array_splice($to_export, 4, 0, $this->term_storage->load($term->tid)->getRevisionId());
       }
       if ($include_fields) {
         $field_export = [];
