@@ -56,6 +56,11 @@ class ImportController {
       $num_of_lines = count($csvLine);
       $needs_revision = false;
       if (in_array($num_of_lines, [9, 10]) && $may_need_revision) {
+        // Export may have fake or no uuids from d7. generate some that are real-ish.
+        if (empty(trim($csvLine[1])) || strpos($csvLine[1], 'fake_tax_uuid') !== FALSE) {
+          $uuid_service = \Drupal::service('uuid');
+          $csvLine[1] = $uuid_service->generate();
+        }
         // This export may be from an earlier version. Check for revision_id.
         if (!is_numeric(trim($csvLine[4]))) {
           // The default revision_id in 8.7 is the tid.
