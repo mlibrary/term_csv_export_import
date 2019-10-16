@@ -98,7 +98,7 @@ class ImportController {
   /**
    * {@inheritdoc}
    */
-  public function execute($preserve_vocabularies) {
+  public function execute($preserve_vocabularies, $preserve_tids) {
     // We need to invalidate caches to pull direct from db.
     Cache::invalidateTags(array(
       'taxonomy_term_values',
@@ -124,6 +124,10 @@ class ImportController {
         else {
           $term_existing = $term_existing[0];
         }
+      }
+      if ($term_existing && $preserve_tids) {
+        drupal_set_message(t('The term with id @id already exists and preserve existing terms is checked. No modification has been made.', ['@id' => $row['tid']]));
+        continue;
       }
       if ($term_existing) {
         $new_term = $term_existing;

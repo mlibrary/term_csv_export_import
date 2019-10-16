@@ -80,6 +80,10 @@ class ImportForm extends FormBase implements FormInterface {
           '#type' => 'checkbox',
           '#title' => $this->t('Preserve Vocabularies on existing terms.'),
         ];
+        $form['preserve_tids'] = [
+          '#type' => 'checkbox',
+          '#title' => $this->t('Preserve existing terms. This will prevent a term id collision if importing from another install.'),
+        ];
         $vocabularies = taxonomy_vocabulary_get_names();
         $vocabularies['create_new'] = 'create_new';
         $form['vocabulary'] = [
@@ -111,8 +115,11 @@ class ImportForm extends FormBase implements FormInterface {
 
       case 3:
         $preserve = '';
+        if ($this->userInput['preserve_tids']) {
+          $preserve .= " and preserve existing terms";
+        }
         if ($this->userInput['preserve_vocabularies']) {
-          $preserve = " and preserve vocabularies on existing terms";
+          $preserve .= " and preserve vocabularies on existing terms";
         }
         $has_header = stripos($this->userInput['input'], "name,status,description__value,description__format,weight,parent_name");
         $term_count = count(array_filter(preg_split('/\r\n|\r|\n/', $this->userInput['input'])));
@@ -147,6 +154,7 @@ class ImportForm extends FormBase implements FormInterface {
           $this->userInput['vocabulary'] = $form_state->getValue('vocabulary');
         }
         $this->userInput['preserve_vocabularies'] = $form_state->getValue('preserve_vocabularies');
+        $this->userInput['preserve_tids'] = $form_state->getValue('preserve_tids');
         $this->userInput['input'] = $form_state->getValue('input');
         $form_state->setRebuild();
         break;
@@ -162,7 +170,7 @@ class ImportForm extends FormBase implements FormInterface {
         $this->userInput['input'],
         $this->userInput['vocabulary']
         );
-        $import->execute($this->userInput['preserve_vocabularies']);
+        $import->execute($this->userInput['preserve_vocabularies'], $this->userInput['preserve_tids']);
         break;
     }
     $this->step++;
