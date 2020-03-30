@@ -3,22 +3,39 @@
 namespace Drupal\term_csv_export_import\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\taxonomy\Entity\Term;
 use Drupal\taxonomy\TermStorage;
 
 /**
  * Class ExportController.
  */
 class ExportController extends ControllerBase {
+
+  /**
+   * The vocabulary storage.
+   *
+   * @var \Drupal\taxonomy\Entity\Vocabulary
+   */
   protected  $vocabulary;
-  protected $term_storage;
+
+  /**
+   * The taxonomy term storage.
+   *
+   * @var \Drupal\taxonomy\TermStorageInterface
+   */
+  protected $termStorage;
+
+  /**
+   * Export Variable.
+   *
+   * @var \Drupal\Core\Config\StorageInterface
+   */
   public $export;
 
   /**
    * {@inheritdoc}
    */
   public function __construct(TermStorage $term_storage, $vocabulary) {
-    $this->term_storage = $term_storage;
+    $this->termStorage = $term_storage;
     $this->vocabulary = $vocabulary;
   }
 
@@ -26,7 +43,7 @@ class ExportController extends ControllerBase {
    * {@inheritdoc}
    */
   public function execute($include_ids, $include_headers, $include_fields) {
-    $terms = $this->term_storage->loadTree($this->vocabulary);
+    $terms = $this->termStorage->loadTree($this->vocabulary);
     $fp = fopen('php://memory', 'rw');
     $standardTaxonomyFields = [
       'tid',
@@ -48,7 +65,14 @@ class ExportController extends ControllerBase {
     $to_export = [];
 
     if ($include_headers) {
-      $to_export = ['name', 'status', 'description__value', 'description__format', 'weight', 'parent_name'];
+      $to_export = [
+        'name',
+        'status',
+        'description__value',
+        'description__format',
+        'weight',
+        'parent_name',
+      ];
       if ($include_ids) {
         $to_export = array_merge(['tid', 'uuid'], $to_export);
         $to_export[] = 'parent_tid';
@@ -60,15 +84,15 @@ class ExportController extends ControllerBase {
     }
     fputcsv($fp, $to_export);
     foreach ($terms as $term) {
-      $parents = $this->term_storage->loadParents($term->tid);
+      $parents = $this->termStorage->loadParents($term->tid);
       $parent_names = '';
       $parent_ids = '';
       $to_export = [];
       if (!empty($parents)) {
         if (count($parents > 1)) {
           foreach ($parents as $parent) {
-            $parent_names .= $parent->getName().';';
-            $parent_ids .= $parent->id().';';
+            $parent_names .= $parent->getName() . ';';
+            $parent_ids .= $parent->id() . ';';
           }
         }
         else {
@@ -85,13 +109,13 @@ class ExportController extends ControllerBase {
         $parent_names,
       ];
       if ($include_ids) {
-        $to_export = array_merge([$term->tid, $this->term_storage->load($term->tid)->uuid()], $to_export);
+        $to_export = array_merge([$term->tid, $this->termStorage->load($term->tid)->uuid()], $to_export);
         $to_export[] = $parent_ids;
-        array_splice($to_export, 4, 0, $this->term_storage->load($term->tid)->getRevisionId());
+        array_splice($to_export, 4, 0, $this->termStorage->load($term->tid)->getRevisionId());
       }
       if ($include_fields) {
         $field_export = [];
-        foreach ($this->term_storage->load($term->tid)->getFields() as $field) {
+        foreach ($this->termStorage->load($term->tid)->getFields() as $field) {
           if (!in_array($field->getName(), $standardTaxonomyFields)) {
             foreach ($field->getValue() as $values) {
               foreach ($values as $value) {

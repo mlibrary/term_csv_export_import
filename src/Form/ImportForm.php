@@ -123,8 +123,8 @@ class ImportForm extends FormBase implements FormInterface {
         }
         $has_header = stripos($this->userInput['input'], "name,status,description__value,description__format,weight,parent_name");
         $term_count = count(array_filter(preg_split('/\r\n|\r|\n/', $this->userInput['input'])));
-        if ($has_header !== false) {
-          $term_count = $term_count -1;
+        if ($has_header !== FALSE) {
+          $term_count = $term_count - 1;
         }
         $form['#title'] .= ' - ' . $this->t('Are you sure you want to copy @count_terms terms into the vocabulary @vocabulary@preserve_vocabularies?',
                                      [

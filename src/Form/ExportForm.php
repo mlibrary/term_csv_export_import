@@ -37,7 +37,7 @@ class ExportForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-   protected $container;
+  protected $container;
 
   /**
    * {@inheritdoc}
