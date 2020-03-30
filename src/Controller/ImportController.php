@@ -63,7 +63,7 @@ class ImportController {
     $keys = [];
     $may_need_revision = TRUE;
     if (!array_diff($keys_noid, $csvArray[0])) {
-      drupal_set_message($this->t('The header keys were not included in the import.'), 'warning');
+      \Drupal::messenger()->addWarning(t('The header keys were not included in the import.'));
       $keys = $csvArray[0];
       if (isset($keys['revision_id'])) {
         // This is not an export from an earlier version.
@@ -97,11 +97,14 @@ class ImportController {
           $keys = $keys_noid;
         }
         else {
-          drupal_set_message($this->t('Line with "@part" could not be parsed. Incorrect number of values: @count.',
-            [
-              '@part' => implode(',', $csvLine),
-              '@count' => count($csvLine),
-            ]), 'error');
+          \Drupal::messenger()->addError(
+            t('Line with "@part" could not be parsed. Incorrect number of values: @count.',
+              [
+                '@part' => implode(',', $csvLine),
+                '@count' => count($csvLine),
+              ]
+            )
+          );
           continue;
         }
         if (in_array($num_of_lines, [7, 11])) {
@@ -138,7 +141,9 @@ class ImportController {
       else {
         $term_existing = taxonomy_term_load_multiple_by_name($row['name'], $this->vocabulary);
         if (count($term_existing) > 1) {
-          drupal_set_message($this->t('The term @name has multiple matches. Ignoring.', ['@name' => $row['name']]));
+          \Drupal::messenger()->addStatus(
+            t('The term @name has multiple matches. Ignoring.', ['@name' => $row['name']])
+          );
           continue;
         }
         else {
@@ -146,7 +151,12 @@ class ImportController {
         }
       }
       if ($term_existing && $preserve_tids) {
-        drupal_set_message($this->t('The term with id @id already exists and preserve existing terms is checked. No modification has been made.', ['@id' => $row['tid']]));
+        \Drupal::messenger()->addStatus(
+          t(
+            'The term with id @id already exists and preserve existing terms is checked. No modification has been made.',
+            ['@id' => $row['tid']]
+          )
+        );
         continue;
       }
       if ($term_existing) {
@@ -165,7 +175,7 @@ class ImportController {
           ->condition('taxonomy_term_field_data.tid', $row['tid'], '=');
         $tids1 = $query1->execute()->fetchAll(\PDO::FETCH_OBJ);
         if (!empty($tids) || !empty($tids1)) {
-          drupal_set_message($this->t('The Term ID already exists.'), 'error');
+          \Drupal::messenger()->addError(t('The Term ID already exists.'));
           continue;
         }
         $db->insert('taxonomy_term_data')
@@ -267,7 +277,12 @@ class ImportController {
           $parent_term = taxonomy_term_load_multiple_by_name($parent_name, $this->vocabulary);
           if (count($parent_term) > 1) {
             unset($parent_term);
-            drupal_set_message($this->t('More than 1 terms are named @name. Cannot distinguish by name. Try using id export/import.', ['@name' => $row['parent_name']]), 'error');
+            \Drupal::messenger()->addError(
+              t(
+                'More than 1 terms are named @name. Cannot distinguish by name. Try using id export/import.',
+                ['@name' => $row['parent_name']]
+              )
+            );
           }
           else {
             $parent_terms[] = array_values($parent_term)[0];
@@ -290,7 +305,12 @@ class ImportController {
       if (isset($row['fields']) && !empty($row['fields'])) {
         parse_str($row['fields'], $field_array);
         if (!is_array($field_array)) {
-          drupal_set_message($this->t('The field data <em>@data</em> is not formatted correctly. Please use the export function.', ['@data' => $row['fields']]), 'error');
+          \Drupal::messenger()->addError(
+            t(
+              'The field data <em>@data</em> is not formatted correctly. Please use the export function.',
+              ['@data' => $row['fields']]
+            )
+          );
           continue;
         }
         else {
@@ -299,7 +319,12 @@ class ImportController {
               $new_term->set($field_name, $field_values);
             }
             else {
-              drupal_set_message($this->t('The field data <em>@data</em> could not be imported. Please add the appropriate fields to the vocabulary you are importing into.', ['@data' => $row['fields']]), 'warning');
+              \Drupal::messenger()->addWarning(
+                t(
+                  'The field data <em>@data</em> could not be imported. Please add the appropriate fields to the vocabulary you are importing into.',
+                  ['@data' => $row['fields']]
+                )
+              );
             }
           }
         }
@@ -308,7 +333,9 @@ class ImportController {
       $new_term->save();
       $processed++;
     }
-    drupal_set_message($this->t('Imported @count terms.', ['@count' => $processed]));
+    \Drupal::messenger()->addStatus(
+      t('Imported @count terms.', ['@count' => $processed])
+    );
   }
 
 }
