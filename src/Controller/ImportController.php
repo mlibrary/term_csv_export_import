@@ -74,7 +74,7 @@ class ImportController {
     foreach ($csvArray as $csvLine) {
       $num_of_lines = count($csvLine);
       $needs_revision = FALSE;
-      if (in_array($num_of_lines, [9, 10]) && $may_need_revision) {
+      if (in_array($num_of_lines, [9, 10, 11]) && ($may_need_revision || empty(trim($csvLine[1])))) {
         // Export may have fake or no uuids from d7. generate some that are
         // real-ish.
         if (empty(trim($csvLine[1])) || strpos($csvLine[1], 'fake_tax_uuid') !== FALSE) {
@@ -82,7 +82,7 @@ class ImportController {
           $csvLine[1] = $uuid_service->generate();
         }
         // This export may be from an earlier version. Check for revision_id.
-        if (!is_numeric(trim($csvLine[4]))) {
+        if (!is_numeric(trim($csvLine[4])) && in_array($num_of_lines, [9, 10])) {
           // The default revision_id in 8.7 is the tid.
           array_splice($csvLine, 4, 0, $csvLine[0]);
           $needs_revision = TRUE;
@@ -230,7 +230,7 @@ class ImportController {
         ]);
       }
       // Change the vocabulary if requested.
-      if ($new_term->getVocabularyId() != $this->vocabulary && !$preserve_vocabularies) {
+      if ($new_term->bundle() != $this->vocabulary && !$preserve_vocabularies) {
         // TODO: Make this work.
         // $new_term->vid->setValue($this->vocabulary);.
         /* Currently get an EntityStorageException when field does not exist
